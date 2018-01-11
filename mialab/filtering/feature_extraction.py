@@ -5,6 +5,7 @@ import numpy as np
 import SimpleITK as sitk
 
 import mialab.filtering.filter as fltr
+from skimage.feature import hog
 
 
 class AtlasCoordinates(fltr.IFilter):
@@ -94,7 +95,7 @@ def first_order_texture_features_function(values):
             - percentile90th
     """
     eps = sys.float_info.epsilon  # to avoid division by zero
-
+    np.seterr(invalid='ignore')
     mean = np.mean(values)
     std = np.std(values)
     snr = mean / std if std != 0 else 0
@@ -249,3 +250,22 @@ class RandomizedTrainingMaskGenerator:
         mask.SetSpacing(ground_truth.GetSpacing())
 
         return mask
+
+
+#def hog_feature(input)
+
+
+#class history_of_gradient:
+#    """
+#    Finding the history of gradient
+#
+#    """
+#
+#    def __init__(self, function_ = hog_feature):
+#        """Initializes a new instance of the HOG class."""
+#        super().__init__()
+#        self.function = function_
+#
+#
+#    def execute(self, image: sitk.Image, params: fltr.IFilterParams = None) -> sitk.Image:
+

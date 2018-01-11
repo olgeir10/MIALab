@@ -26,7 +26,7 @@ import mialab.utilities.pipeline_utilities as putil
 FLAGS = None  # the program flags
 IMAGE_KEYS = [structure.BrainImageTypes.T1, structure.BrainImageTypes.T2, structure.BrainImageTypes.GroundTruth]  # the list of images we will load
 TRAIN_BATCH_SIZE = 70  # 1..70, the higher the faster but more memory usage
-TEST_BATCH_SIZE = 2  # 1..30, the higher the faster but more memory usage
+TEST_BATCH_SIZE = 4  # 1..30, the higher the faster but more memory usage
 
 
 def main(_):
@@ -64,8 +64,16 @@ def main(_):
 
     pre_process_params = {'zscore_pre': True,
                           'coordinates_feature': True,
-                          'intensity_feature': True,
-                          'gradient_intensity_feature': True}
+                          'intensity_feature': False,
+                          'laplacian_feature': False,
+                          'gradient_intensity_feature': False,
+                          'neighborhood_feature': False,
+                          'discrete_gauss_feature': False,
+                          'gradient_gauss': False,
+                          'sobel_feature': False,
+                          'canny_feature': False,
+                          'lrg_feature': False,
+                          'erosion_feature': False}
 
     # initialize decision forest parameters
     df_params = df.DecisionForestParameters()
@@ -73,6 +81,7 @@ def main(_):
     df_params.num_trees = 20
     df_params.max_nodes = 1000
     df_params.model_dir = model_dir
+    df_params.report_feature_importances = False
     forest = None
 
     for batch_index in range(0, len(data_items), TRAIN_BATCH_SIZE):
@@ -126,6 +135,14 @@ def main(_):
             probabilities, predictions = forest.predict(img.feature_matrix[0])
             print(' Time elapsed:', timeit.default_timer() - start_time, 's')
 
+            # or directly evaluate when labels are known
+            # this can be used to see the feature importance
+            eval_data, eval_labels = Generator.get_test_data_with_label(50)
+            results = forest.evaluate(img.feature_matrix[0], img.feature_matrix[1])
+            for key in sorted(results):
+                print('%s: %s' % (key, results[key]))
+
+
             # convert prediction and probabilities back to SimpleITK images
             image_prediction = conversion.NumpySimpleITKImageBridge.convert(predictions.astype(np.uint8),
                                                                             img.image_properties)
@@ -138,9 +155,9 @@ def main(_):
             images_probabilities.append(image_probabilities)
 
         # post-process segmentation and evaluate with post-processing
-        post_process_params = {'crf_post': True}
+        post_process_params = {'crf_post': False}
         images_post_processed = putil.post_process_batch(images_test, images_prediction, images_probabilities,
-                                                         post_process_params, multi_process=True)
+                                                         post_process_params, multi_process=False)
 
         for i, img in enumerate(images_test):
             evaluator.evaluate(images_post_processed[i], img.images[structure.BrainImageTypes.GroundTruth],
@@ -148,7 +165,7 @@ def main(_):
 
             # save results
             sitk.WriteImage(images_prediction[i], os.path.join(result_dir, images_test[i].id_ + '_SEG.mha'), True)
-            sitk.WriteImage(images_post_processed[i], os.path.join(result_dir, images_test[i].id_ + '_SEG-PP.mha'), True)
+            sitk.WriteImage(images_post_processed[i], os.path.join(result_dir, images_test[i].id_ + '_SEG-PP.mha'), False)
 
 
 if __name__ == "__main__":

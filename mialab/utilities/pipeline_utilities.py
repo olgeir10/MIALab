@@ -6,6 +6,7 @@ from typing import List, Dict
 import numpy as np
 import SimpleITK as sitk
 
+
 import mialab.data.structure as structure
 import mialab.evaluation.evaluator as eval
 import mialab.evaluation.metric as metric
@@ -39,8 +40,23 @@ class FeatureImageTypes(Enum):
     ATLAS_COORD = 1
     T1_INTENSITY = 2
     T1_GRADIENT_INTENSITY = 3
-    T2_INTENSITY = 4
-    T2_GRADIENT_INTENSITY = 5
+    T1_NEIGHBOR = 4
+    T1_LAPLACIAN = 5
+    T1_GAUSS = 6
+    T1_SOBEL = 7
+    T1_CANNY = 8
+    T1_LRG = 9
+    T1_EROSION = 10
+    T2_INTENSITY = 11
+    T2_GRADIENT_INTENSITY = 12
+    T2_NEIGHBOR = 13
+    T2_LAPLACIAN = 14
+    T2_GAUSS = 15
+    T2_SOBEL = 16
+    T2_CANNY = 17
+    T2_LRG = 18
+    T2_EROSION = 19
+    T1_HOG = 20
 
 
 class FeatureExtractor:
@@ -56,7 +72,16 @@ class FeatureExtractor:
         self.training = kwargs.get('training', True)
         self.coordinates_feature = kwargs.get('coordinates_feature', False)
         self.intensity_feature = kwargs.get('intensity_feature', False)
+        self.laplacian_feature = kwargs.get('laplacian_feature', False)
         self.gradient_intensity_feature = kwargs.get('gradient_intensity_feature', False)
+        self.neighborhood_feature = kwargs.get('neighborhood_feature', False)
+        self.discrete_gauss_feature = kwargs.get('discrete_gauss_feature', False)
+        self.gradient_gauss = kwargs.get('gradient_gauss', False)
+        self.sobel_feature = kwargs.get('sobel_feature', False)
+        self.canny_feature = kwargs.get('canny_feature', False)
+        self.lrg_feature = kwargs.get('lrg_feature', False)
+        self.erosion_feature = kwargs.get('erosion_feature', False)
+        self.hog_feature = kwargs.get('hog_feature', False)
 
     def execute(self) -> structure.BrainImage:
         """Extracts features from an image.
@@ -66,12 +91,20 @@ class FeatureExtractor:
         """
         if self.coordinates_feature:
             atlas_coordinates = fltr_feat.AtlasCoordinates()
+#            self.img.feature_images[FeatureImageTypes.ATLAS_COORD] = \
+#                atlas_coordinates.execute(self.img.images[structure.BrainImageTypes.T1])
             self.img.feature_images[FeatureImageTypes.ATLAS_COORD] = \
-                atlas_coordinates.execute(self.img.images[structure.BrainImageTypes.T1])
+                atlas_coordinates.execute(self.img.images[structure.BrainImageTypes.T2])
 
         if self.intensity_feature:
             self.img.feature_images[FeatureImageTypes.T1_INTENSITY] = self.img.images[structure.BrainImageTypes.T1]
             self.img.feature_images[FeatureImageTypes.T2_INTENSITY] = self.img.images[structure.BrainImageTypes.T2]
+
+        if self.laplacian_feature:
+            self.img.feature_images[FeatureImageTypes.T1_LAPLACIAN] = \
+                sitk.LaplacianSharpening(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_LAPLACIAN] = \
+                sitk.LaplacianSharpening(self.img.images[structure.BrainImageTypes.T2])
 
         if self.gradient_intensity_feature:
             # compute gradient magnitude images
@@ -79,6 +112,51 @@ class FeatureExtractor:
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T1])
             self.img.feature_images[FeatureImageTypes.T2_GRADIENT_INTENSITY] = \
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.neighborhood_feature:
+            neighborhood_feature = fltr_feat.NeighborhoodFeatureExtractor()
+            self.img.feature_images[FeatureImageTypes.T1_NEIGHBOR] = \
+                neighborhood_feature.execute(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_NEIGBHOR] = \
+                neighborhood_feature.execute(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.discrete_gauss_feature:
+            self.img.feature_images[FeatureImageTypes.T1_GAUSS] = \
+                sitk.DiscreteGaussian(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_GAUSS] = \
+                sitk.DiscreteGaussian(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.gradient_gauss:
+            self.img.feature_images[FeatureImageTypes.T1_GAUSS] = \
+                sitk.GradientRecursiveGaussian(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_GAUSS] = \
+                sitk.GradientRecursiveGaussian(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.sobel_feature:
+            self.img.feature_images[FeatureImageTypes.T1_SOBEL] = \
+                sitk.SobelEdgeDetection(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_SOBEL] = \
+                sitk.SobelEdgeDetection(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.canny_feature:
+            self.img.feature_images[FeatureImageTypes.T1_CANNY] = \
+                sitk.CannyEdgeDetection(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_CANNY] = \
+                sitk.CannyEdgeDetection(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.lrg_feature:
+            self.img.feature_images[FeatureImageTypes.T1_LRG] = \
+                sitk.LaplacianRecursiveGaussian(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_LRG] = \
+                sitk.LaplacianRecursiveGaussian(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.erosion_feature:
+            self.img.feature_images[FeatureImageTypes.T1_EROSION] = \
+                sitk.BinaryFillhole(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T2_EROSION] = \
+               sitk.BinaryFillhole(self.img.images[structure.BrainImageTypes.T2])
+
+
 
         self._generate_feature_matrix()
 
