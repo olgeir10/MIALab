@@ -68,12 +68,12 @@ def main(_):
                           'laplacian_feature': False,
                           'gradient_intensity_feature': False,
                           'neighborhood_feature': False,
-                          'discrete_gauss_feature': False,
-                          'gradient_gauss': False,
-                          'sobel_feature': False,
-                          'canny_feature': False,
-                          'lrg_feature': False,
-                          'erosion_feature': False}
+                          'discrete_gauss_feature':False,
+                          'gradient_gauss':False,
+                          'sobel_feature':False,
+                          'canny_feature':False,
+                          'lrg_feature':False,
+                          'erosion_feature':False }
 
     # initialize decision forest parameters
     df_params = df.DecisionForestParameters()
@@ -137,10 +137,10 @@ def main(_):
 
             # or directly evaluate when labels are known
             # this can be used to see the feature importance
-            eval_data, eval_labels = Generator.get_test_data_with_label(50)
-            results = forest.evaluate(img.feature_matrix[0], img.feature_matrix[1])
-            for key in sorted(results):
-                print('%s: %s' % (key, results[key]))
+            # eval_data, eval_labels = Generator.get_test_data_with_label(50)
+#            results = forest.evaluate(img.feature_matrix[0], img.feature_matrix[1])
+#            for key in sorted(results):
+#                print('%s: %s' % (key, results[key]))
 
 
             # convert prediction and probabilities back to SimpleITK images
